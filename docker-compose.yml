@@ -29,9 +29,10 @@ services:
     environment:
       - OPENAI_API_BASE_URL=http://lmstudio:${LMS_PORT:-1234}/v1
       - OPENAI_API_KEY=lmstudio
-      - WEBUI_AUTH=false
-      - ENABLE_LOGIN_FORM=false
-      - ENABLE_SIGNUP=false
+      - WEBUI_AUTH=true
+      - ENABLE_LOGIN_FORM=true
+      - ENABLE_SIGNUP=true
+      - ENABLE_API_KEYS=true
       - ENABLE_EVALUATION_ARENA_MODELS=false
     volumes:
       - open-webui-data:/app/backend/data
