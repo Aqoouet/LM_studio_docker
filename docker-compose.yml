@@ -12,7 +12,7 @@ services:
       - LMS_PORT=${LMS_PORT:-1234}
       - LMS_HOST=0.0.0.0
     volumes:
-      - lmstudio-models:/root/.lmstudio/models
+      - /expert_scratch/lmstudio-models:/root/.lmstudio/models
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:${LMS_PORT:-1234}/v1/models"]
       interval: 30s
@@ -30,6 +30,9 @@ services:
       - OPENAI_API_BASE_URL=http://lmstudio:${LMS_PORT:-1234}/v1
       - OPENAI_API_KEY=lmstudio
       - WEBUI_AUTH=false
+      - ENABLE_LOGIN_FORM=false
+      - ENABLE_SIGNUP=false
+      - ENABLE_EVALUATION_ARENA_MODELS=false
     volumes:
       - open-webui-data:/app/backend/data
     depends_on:
@@ -37,7 +40,5 @@ services:
         condition: service_healthy
 
 volumes:
-  lmstudio-models:
-    driver: local
   open-webui-data:
     driver: local
