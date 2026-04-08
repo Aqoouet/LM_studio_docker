@@ -1,0 +1,5 @@
+.env
+*.gguf
+*.bin
+*.safetensors
+models/

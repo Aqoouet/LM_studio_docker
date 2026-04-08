@@ -1,0 +1,25 @@
+services:
+  lmstudio:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: lmstudio-headless:latest
+    container_name: lmstudio
+    restart: unless-stopped
+    ports:
+      - "${LMS_PORT:-1234}:${LMS_PORT:-1234}"
+    environment:
+      - LMS_PORT=${LMS_PORT:-1234}
+      - LMS_HOST=0.0.0.0
+    volumes:
+      - lmstudio-models:/root/.lmstudio/models
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:${LMS_PORT:-1234}/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 15s
+
+volumes:
+  lmstudio-models:
+    driver: local
