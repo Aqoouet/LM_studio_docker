@@ -11,6 +11,9 @@ services:
     environment:
       - LMS_PORT=${LMS_PORT:-1234}
       - LMS_HOST=0.0.0.0
+      - LMS_CONTEXT_LENGTH=${LMS_CONTEXT_LENGTH:-262144}
+      - LMS_AUTOLOAD=${LMS_AUTOLOAD:-true}
+      - LMS_MODEL=${LMS_MODEL:-}
     volumes:
       - /expert_scratch/lmstudio-models:/root/.lmstudio/models
     healthcheck:
