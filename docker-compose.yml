@@ -13,6 +13,7 @@ services:
       - LMS_HOST=0.0.0.0
       - LMS_CONTEXT_LENGTH=${LMS_CONTEXT_LENGTH:-262144}
       - LMS_AUTOLOAD=${LMS_AUTOLOAD:-true}
+      # Set in .env to an exact `lms ls` key when multiple models exist; see .env.example
       - LMS_MODEL=${LMS_MODEL:-}
     volumes:
       - /expert_scratch/lmstudio-models:/root/.lmstudio/models

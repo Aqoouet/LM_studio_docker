@@ -20,6 +20,7 @@ if [ "${LMS_AUTOLOAD}" = "true" ]; then
   if [ -n "${LMS_MODEL}" ]; then
     MODEL_CANDIDATES="${LMS_MODEL}"
   else
+    echo "[entrypoint] WARNING: LMS_MODEL is unset. Will try models from 'lms ls --llm' in list order and load the first that succeeds (not necessarily your preferred model). Set LMS_MODEL in .env to fix."
     MODEL_CANDIDATES="$(lms ls --llm | sed -n 's/^[[:space:]]*\([a-zA-Z0-9._][a-zA-Z0-9._-]*-[a-zA-Z0-9._-]*\)[[:space:]].*/\1/p')"
   fi
 
