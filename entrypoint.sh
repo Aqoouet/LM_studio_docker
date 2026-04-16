@@ -6,12 +6,28 @@ LMS_HOST="${LMS_HOST:-0.0.0.0}"
 LMS_CONTEXT_LENGTH="${LMS_CONTEXT_LENGTH:-262144}"
 LMS_AUTOLOAD="${LMS_AUTOLOAD:-true}"
 LMS_MODEL="${LMS_MODEL:-}"
+LMS_GET_MODEL="${LMS_GET_MODEL:-}"
 
 echo "[entrypoint] Starting lms daemon ..."
 lms daemon up
 
 echo "[entrypoint] Waiting for daemon to initialize ..."
 sleep 5
+
+if [ -n "${LMS_GET_MODEL}" ]; then
+  echo "[entrypoint] Ensuring model '${LMS_GET_MODEL}' is downloaded ..."
+  for ATTEMPT in 1 2 3 4 5 6; do
+    if lms get "${LMS_GET_MODEL}"; then
+      break
+    fi
+    if [ "${ATTEMPT}" -eq 6 ]; then
+      echo "[entrypoint] WARNING: failed to download '${LMS_GET_MODEL}'. Continuing startup."
+      break
+    fi
+    echo "[entrypoint] Download attempt ${ATTEMPT}/6 failed for '${LMS_GET_MODEL}', retrying ..."
+    sleep 5
+  done
+fi
 
 echo "[entrypoint] Starting server on ${LMS_HOST}:${LMS_PORT} ..."
 lms server start -p "${LMS_PORT}" --bind "${LMS_HOST}"

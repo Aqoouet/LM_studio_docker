@@ -13,6 +13,7 @@ services:
       - LMS_HOST=0.0.0.0
       - LMS_CONTEXT_LENGTH=${LMS_CONTEXT_LENGTH:-262144}
       - LMS_AUTOLOAD=${LMS_AUTOLOAD:-true}
+      - LMS_GET_MODEL=${LMS_GET_MODEL:-}
       # Set in .env to an exact `lms ls` key when multiple models exist; see .env.example
       - LMS_MODEL=${LMS_MODEL:-}
     volumes:

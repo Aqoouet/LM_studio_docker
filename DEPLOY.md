@@ -38,6 +38,8 @@ docker compose ps
 
 ~45 GB download. For higher quality (77 GB): replace `q4_k_m` with `q8_0`.
 
+Default `.env` now auto-downloads `qwen/qwen3-4b-2507` on container startup and auto-loads it into memory.
+
 ## 4. Open chat UI
 
 ```
