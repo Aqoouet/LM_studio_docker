@@ -12,11 +12,6 @@ LMS_GET_MODEL="${LMS_GET_MODEL:-}"
 # Falls back to LMS_MODEL (single model, legacy) if LMS_MODELS is unset.
 LMS_MODELS="${LMS_MODELS:-${LMS_MODEL:-}}"
 
-if [ -f /usr/local/lib/mlockall_preload.so ]; then
-  export LD_PRELOAD=/usr/local/lib/mlockall_preload.so
-  echo "[entrypoint] mlockall preload enabled — all pages will be locked in RAM."
-fi
-
 echo "[entrypoint] Starting lms daemon ..."
 lms daemon up
 
