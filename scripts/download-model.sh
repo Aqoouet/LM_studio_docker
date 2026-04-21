@@ -2,6 +2,7 @@
 # Usage:
 #   ./scripts/download-model.sh <model-name>
 #   ./scripts/download-model.sh lmstudio-community/Qwen3.5-35B-A3B-GGUF
+#   ./scripts/download-model.sh "https://huggingface.co/lmstudio-community/Qwen3.6-35B-A3B-GGUF@q4_k_m"
 #
 # The model will be downloaded into the container's /root/.lmstudio/models volume.
 
@@ -15,6 +16,7 @@ if [[ -z "${MODEL}" ]]; then
   echo ""
   echo "Examples:"
   echo "  $0 lmstudio-community/Qwen3.5-35B-A3B-GGUF"
+  echo "  $0 \"https://huggingface.co/lmstudio-community/Qwen3.6-35B-A3B-GGUF@q4_k_m\""
   echo ""
   echo "Browse models at: https://lmstudio.ai/models"
   exit 1
