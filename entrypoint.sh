@@ -5,8 +5,17 @@ LMS_PORT="${LMS_PORT:-1234}"
 LMS_HOST="${LMS_HOST:-0.0.0.0}"
 LMS_CONTEXT_LENGTH="${LMS_CONTEXT_LENGTH:-262144}"
 LMS_AUTOLOAD="${LMS_AUTOLOAD:-true}"
-LMS_MODEL="${LMS_MODEL:-}"
+LMS_MAX_CONCURRENT="${LMS_MAX_CONCURRENT:-10}"
 LMS_GET_MODEL="${LMS_GET_MODEL:-}"
+# LMS_MODELS: space-separated list of model keys to autoload
+# e.g. "qwen/qwen3-4b-2507 qwen3.6-35b-a3b"
+# Falls back to LMS_MODEL (single model, legacy) if LMS_MODELS is unset.
+LMS_MODELS="${LMS_MODELS:-${LMS_MODEL:-}}"
+
+if [ -f /usr/local/lib/mlockall_preload.so ]; then
+  export LD_PRELOAD=/usr/local/lib/mlockall_preload.so
+  echo "[entrypoint] mlockall preload enabled — all pages will be locked in RAM."
+fi
 
 echo "[entrypoint] Starting lms daemon ..."
 lms daemon up
@@ -33,33 +42,27 @@ echo "[entrypoint] Starting server on ${LMS_HOST}:${LMS_PORT} ..."
 lms server start -p "${LMS_PORT}" --bind "${LMS_HOST}"
 
 if [ "${LMS_AUTOLOAD}" = "true" ]; then
-  if [ -n "${LMS_MODEL}" ]; then
-    MODEL_CANDIDATES="${LMS_MODEL}"
+  if [ -z "${LMS_MODELS}" ]; then
+    echo "[entrypoint] WARNING: LMS_MODELS is unset. Skipping autoload. Set LMS_MODELS in .env."
   else
-    echo "[entrypoint] WARNING: LMS_MODEL is unset. Will try models from 'lms ls --llm' in list order and load the first that succeeds (not necessarily your preferred model). Set LMS_MODEL in .env to fix."
-    MODEL_CANDIDATES="$(lms ls --llm | sed -n 's/^[[:space:]]*\([a-zA-Z0-9._][a-zA-Z0-9._-]*-[a-zA-Z0-9._-]*\)[[:space:]].*/\1/p')"
-  fi
-
-  if [ -n "${MODEL_CANDIDATES}" ]; then
-    MODEL_LOADED=false
-    for MODEL_TO_LOAD in ${MODEL_CANDIDATES}; do
-      echo "[entrypoint] Auto-loading model '${MODEL_TO_LOAD}' with context length ${LMS_CONTEXT_LENGTH} ..."
+    for MODEL_TO_LOAD in ${LMS_MODELS}; do
+      echo "[entrypoint] Auto-loading '${MODEL_TO_LOAD}' (context=${LMS_CONTEXT_LENGTH}, parallel=${LMS_MAX_CONCURRENT}) ..."
+      LOADED=false
       for ATTEMPT in 1 2 3 4 5 6; do
-        if lms load "${MODEL_TO_LOAD}" -c "${LMS_CONTEXT_LENGTH}" -y; then
-          MODEL_LOADED=true
-          break 2
+        if lms load "${MODEL_TO_LOAD}" \
+            -c "${LMS_CONTEXT_LENGTH}" \
+            --parallel "${LMS_MAX_CONCURRENT}" \
+            -y; then
+          LOADED=true
+          break
         fi
-        echo "[entrypoint] Load attempt ${ATTEMPT}/6 failed for '${MODEL_TO_LOAD}', waiting for model index ..."
+        echo "[entrypoint] Load attempt ${ATTEMPT}/6 failed for '${MODEL_TO_LOAD}', retrying ..."
         sleep 5
       done
-      echo "[entrypoint] Could not auto-load '${MODEL_TO_LOAD}', trying next candidate ..."
+      if [ "${LOADED}" != "true" ]; then
+        echo "[entrypoint] WARNING: failed to auto-load '${MODEL_TO_LOAD}'. Continuing."
+      fi
     done
-
-    if [ "${MODEL_LOADED}" != "true" ]; then
-      echo "[entrypoint] WARNING: failed to auto-load any local model. Server remains running."
-    fi
-  else
-    echo "[entrypoint] No local LLM model found. Skipping auto-load."
   fi
 else
   echo "[entrypoint] Auto-load disabled (LMS_AUTOLOAD=${LMS_AUTOLOAD})."

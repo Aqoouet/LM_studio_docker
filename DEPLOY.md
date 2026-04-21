@@ -16,7 +16,19 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker $USER && newgrp docker
 ```
 
-## 2. Clone and start
+## 2. Disable swap (required for RAM-only inference)
+
+Models must stay in RAM — HDD swap kills inference speed.
+
+```bash
+# Disable immediately
+sudo swapoff -a
+
+# Make permanent: comment out swap line in /etc/fstab
+sudo sed -i '/\sswap\s/s/^/#/' /etc/fstab
+```
+
+## 3. Clone and start
 
 ```bash
 git clone git@github.com:Aqoouet/LM_studio_docker.git && cd LM_studio_docker
@@ -30,7 +42,7 @@ Wait until lmstudio is healthy (~2-3 min):
 docker compose ps
 ```
 
-## 3. Download model
+## 4. Download model
 
 ```bash
 ./scripts/download-model.sh "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct-GGUF@q4_k_m"
@@ -40,7 +52,7 @@ docker compose ps
 
 Default `.env` now auto-downloads `qwen/qwen3-4b-2507` on container startup and auto-loads it into memory.
 
-## 4. Open chat UI
+## 5. Open chat UI
 
 ```
 http://<server-ip>:3000

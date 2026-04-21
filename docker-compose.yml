@@ -13,9 +13,15 @@ services:
       - LMS_HOST=0.0.0.0
       - LMS_CONTEXT_LENGTH=${LMS_CONTEXT_LENGTH:-262144}
       - LMS_AUTOLOAD=${LMS_AUTOLOAD:-true}
+      - LMS_MAX_CONCURRENT=${LMS_MAX_CONCURRENT:-10}
       - LMS_GET_MODEL=${LMS_GET_MODEL:-}
-      # Set in .env to an exact `lms ls` key when multiple models exist; see .env.example
-      - LMS_MODEL=${LMS_MODEL:-}
+      # Space-separated list of model keys to autoload; see .env.example
+      - LMS_MODELS=${LMS_MODELS:-}
+    mem_swappiness: 0
+    cap_add:
+      - IPC_LOCK
+    ulimits:
+      memlock: -1
     volumes:
       - /expert_scratch/lmstudio-models:/root/.lmstudio/models
     healthcheck:
