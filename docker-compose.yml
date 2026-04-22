@@ -1,6 +1,6 @@
 services:
   llama-api-qwen36:
-    image: ${LMS_IMAGE:-${LLAMA_IMAGE:-ghcr.io/ggerganov/llama.cpp:server-b4234}}
+    image: ${LMS_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
     container_name: llama-api-qwen36
     restart: unless-stopped
     ports:
@@ -30,7 +30,7 @@ services:
       start_period: 30s
 
   llama-api-qwen34:
-    image: ${LMS_IMAGE:-${LLAMA_IMAGE:-ghcr.io/ggerganov/llama.cpp:server-b4234}}
+    image: ${LMS_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}
     container_name: llama-api-qwen34
     restart: unless-stopped
     ports:
