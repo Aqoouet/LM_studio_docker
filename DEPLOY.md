@@ -3,6 +3,7 @@
 ## Requirements
 - 30+ CPU cores, 400+ GB RAM, no GPU
 - Rocky Linux 8/9
+- Existing GGUF models on host path: `/expert_scratch/lmstudio-models`
 
 ---
 
@@ -16,53 +17,66 @@ sudo systemctl enable --now docker
 sudo usermod -aG docker $USER && newgrp docker
 ```
 
-## 2. Disable swap (required for RAM-only inference)
-
-Models must stay in RAM — HDD swap kills inference speed.
-
-```bash
-# Disable immediately
-sudo swapoff -a
-
-# Make permanent: comment out swap line in /etc/fstab
-sudo sed -i '/\sswap\s/s/^/#/' /etc/fstab
-```
-
-## 3. Clone and start
+## 2. Clone and start
 
 ```bash
 git clone git@github.com:Aqoouet/LM_studio_docker.git && cd LM_studio_docker
 cp .env.example .env
-docker compose up -d --build
+# start.sh blocks startup if swap is in use and autoloads 2 models:
+#   lmstudio-community/Qwen3.6-35B-A3B-GGUF
+#   lmstudio-community/Qwen3-4B-Instruct-2507-GGUF
+./start.sh
 ```
 
-Wait until lmstudio is healthy (~2-3 min):
+Wait until both APIs are healthy (~2-3 min):
 
 ```bash
 docker compose ps
 ```
 
-## 4. Download model
+## 3. Verify APIs
 
 ```bash
-./scripts/download-model.sh "https://huggingface.co/Qwen/Qwen2.5-72B-Instruct-GGUF@q4_k_m"
+curl -fsS http://127.0.0.1:1234/v1/models
+curl -fsS http://127.0.0.1:1235/v1/models
 ```
 
-~45 GB download. For higher quality (77 GB): replace `q4_k_m` with `q8_0`.
+## 4. Tuning for concurrency, CPU, and RAM limit
 
-Default `.env` now auto-downloads `qwen/qwen3-4b-2507` on container startup and auto-loads it into memory.
-
-## 5. Open chat UI
-
+```bash
+# example
+sed -i 's/^LMS_MAX_CONCURRENT=.*/LMS_MAX_CONCURRENT=8/' .env
+sed -i 's/^LMS_THREADS=.*/LMS_THREADS=32/' .env
+sed -i 's/^LMS_CONTAINER_MAX_RAM=.*/LMS_CONTAINER_MAX_RAM=180g/' .env
+docker compose up -d
 ```
-http://<server-ip>:3000
+
+## 5. Verify loaded model path
+
+```bash
+docker logs --tail 100 llama-api
 ```
+
+---
+
+## Troubleshooting
+
+- Container restarts immediately with health failure:
+  - Check logs: `docker logs --tail 200 llama-api`
+  - Confirm both model dirs exist under primary or fallback root:
+    - `lmstudio-community/Qwen3.6-35B-A3B-GGUF`
+    - `lmstudio-community/Qwen3-4B-Instruct-2507-GGUF`
+- start blocked due to swap usage:
+  - `./start.sh` exits if swap is in use by design.
+  - Disable swap usage before start (`sudo swapoff -a`).
+- API not reachable:
+  - Check `API_PORT` in `.env` and firewall for port 1234.
 
 ---
 
 ## Firewall (if needed)
 
 ```bash
-sudo firewall-cmd --permanent --add-port=3000/tcp
+sudo firewall-cmd --permanent --add-port=1234/tcp
 sudo firewall-cmd --reload
 ```

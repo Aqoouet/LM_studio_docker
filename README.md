@@ -1,19 +1,20 @@
-# LM Studio Docker
+# Llama.cpp Docker (CPU)
 
-Docker-стек для запуска LM Studio в безголовом режиме (headless) на сервере без GPU + веб-интерфейс [Open WebUI](https://github.com/open-webui/open-webui).
+Минимальный Docker-стек для запуска двух CPU-only API серверов на базе `llama.cpp` с уже скачанными GGUF-моделями.
 
 ## Состав
 
 | Сервис | Образ | Назначение |
 |--------|-------|-----------|
-| `lmstudio` | собирается локально (Ubuntu 24.04) | LM Studio daemon + OpenAI-совместимый API |
-| `open-webui` | `ghcr.io/open-webui/open-webui:main` | Чат-интерфейс для пользователей |
+| `llama-api-qwen36` | `ghcr.io/ggerganov/llama.cpp:server-b4234` | API для Qwen3.6-35B-A3B |
+| `llama-api-qwen34` | `ghcr.io/ggerganov/llama.cpp:server-b4234` | API для Qwen3-4B-Instruct-2507 |
 
 ## Требования
 
 - Docker + Docker Compose (plugin)
-- 30+ ядер CPU, 400+ ГБ RAM (для больших моделей)
-- Папка с моделями (по умолчанию `/expert_scratch/lmstudio-models`)
+- CPU-only server (без GPU)
+- Primary models root: `/expert_scratch/lmstudio-models`
+- Fallback models root: `/filer/users/rymax1e/lmstudio-models`
 
 ## Быстрый старт
 
@@ -22,37 +23,48 @@ git clone git@github.com:Aqoouet/LM_studio_docker.git
 cd LM_studio_docker
 cp .env.example .env
 # При необходимости отредактируй .env
-docker compose up -d --build
+docker compose pull
+docker compose up -d
 ```
 
-Дождитесь, пока `lmstudio` станет healthy (~2-3 мин):
+По умолчанию автозагружаются 2 модели (через first `.gguf` файл в каталогах):
+
+- `lmstudio-community/Qwen3.6-35B-A3B-GGUF`
+- `lmstudio-community/Qwen3-4B-Instruct-2507-GGUF`
+
+Запусти helper script (он проверит swap usage и наличие модели):
+
+```bash
+./start.sh
+```
+
+Дождитесь, пока оба сервиса станут healthy (~2-3 мин):
 
 ```bash
 docker compose ps
 ```
+API endpoints:
 
-Откройте чат: `http://<server-ip>:3000`
+- `http://<server-ip>:1234/v1/models` (Qwen3.6)
+- `http://<server-ip>:1235/v1/models` (Qwen3-4B)
 
 ## Переменные окружения (.env)
 
 | Переменная | По умолчанию | Описание |
 |-----------|-------------|---------|
-| `LMS_PORT` | `1234` | Порт OpenAI-совместимого API |
-| `LMS_CONTEXT_LENGTH` | `262144` | Длина контекста при загрузке модели |
-| `LMS_AUTOLOAD` | `true` | Автозагрузка модели в память при старте |
-| `LMS_GET_MODEL` | `qwen/qwen3-4b-2507` | Модель для скачивания при старте (если не скачана) |
-| `LMS_MODEL` | `qwen3-4b` | Ключ модели из `lms ls --llm` для автозагрузки |
-| `WEBUI_PORT` | `3000` | Внешний порт Open WebUI |
+| `LLAMA_IMAGE` | `ghcr.io/ggerganov/llama.cpp:server-b4234` | CPU image |
+| `LMS_PORT_MODEL1` | `1234` | Порт API для модели #1 |
+| `LMS_PORT_MODEL2` | `1235` | Порт API для модели #2 |
+| `LMS_MODELS_ROOT_PRIMARY` | `/expert_scratch/lmstudio-models` | Основной путь к GGUF-моделям |
+| `LMS_MODELS_ROOT_FALLBACK` | `/filer/users/rymax1e/lmstudio-models` | Альтернативный путь к GGUF-моделям |
+| `LMS_MODEL1_SUBDIR` | `lmstudio-community/Qwen3.6-35B-A3B-GGUF` | Подкаталог модели #1 |
+| `LMS_MODEL2_SUBDIR` | `lmstudio-community/Qwen3-4B-Instruct-2507-GGUF` | Подкаталог модели #2 |
+| `LMS_MAX_CONCURRENT` | `4` | Кол-во параллельных запросов (`--parallel`) |
+| `LMS_THREADS` | `16` | Потоки CPU (`--threads`) |
+| `LMS_CTX_SIZE` | `4096` | Размер контекста (`--ctx-size`) |
+| `LMS_CONTAINER_MAX_RAM` | `120g` | Лимит RAM на каждый контейнер |
 
-> Если на диске несколько LLM, **обязательно** задайте `LMS_MODEL` — иначе загрузится первая модель из списка.
-
-## Скачать модель вручную
-
-```bash
-./scripts/download-model.sh "lmstudio-community/Qwen3.5-35B-A3B-GGUF"
-```
-
-Модели ищите на [lmstudio.ai/models](https://lmstudio.ai/models).
+> Swap usage блокируется в `start.sh`: если swap используется, скрипт завершится с ошибкой.
 
 ## Развёртывание на Rocky Linux
 
@@ -68,9 +80,8 @@ docker compose ps
 .
 ├── Dockerfile            # Образ lmstudio на Ubuntu 24.04
 ├── docker-compose.yml    # Оркестрация сервисов
-├── entrypoint.sh         # Запуск daemon, скачивание и автозагрузка модели
+├── start.sh              # Проверки swap/model и запуск stack
+├── entrypoint.sh         # Legacy (не используется)
 ├── .env.example          # Шаблон переменных окружения
-├── scripts/
-│   └── download-model.sh # Скачать модель в запущенный контейнер
 └── DEPLOY.md             # Развёртывание на Rocky Linux
 ```

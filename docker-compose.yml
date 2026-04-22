@@ -1,56 +1,60 @@
 services:
-  lmstudio:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    image: lmstudio-headless:latest
-    container_name: lmstudio
+  llama-api-qwen36:
+    image: ${LMS_IMAGE:-${LLAMA_IMAGE:-ghcr.io/ggerganov/llama.cpp:server-b4234}}
+    container_name: llama-api-qwen36
     restart: unless-stopped
     ports:
-      - "${LMS_PORT:-1234}:${LMS_PORT:-1234}"
-    environment:
-      - LMS_PORT=${LMS_PORT:-1234}
-      - LMS_HOST=0.0.0.0
-      - LMS_CONTEXT_LENGTH=${LMS_CONTEXT_LENGTH:-262144}
-      - LMS_AUTOLOAD=${LMS_AUTOLOAD:-true}
-      - LMS_MAX_CONCURRENT=${LMS_MAX_CONCURRENT:-10}
-      - LMS_GET_MODEL=${LMS_GET_MODEL:-}
-      # Space-separated list of model keys to autoload; see .env.example
-      - LMS_MODELS=${LMS_MODELS:-}
-    mem_swappiness: 0
-    cap_add:
-      - IPC_LOCK
-    ulimits:
-      memlock: -1
+      - "${LMS_PORT_MODEL1:-${API_PORT_MODEL1:-1234}}:8080"
     volumes:
-      - /expert_scratch/lmstudio-models:/root/.lmstudio/models
+      - ${LMS_MODELS_ROOT_PRIMARY:-${PRIMARY_MODELS_ROOT:-/expert_scratch/lmstudio-models}}:/models_primary:ro
+      - ${LMS_MODELS_ROOT_FALLBACK:-${FALLBACK_MODELS_ROOT:-/filer/users/rymax1e/lmstudio-models}}:/models_fallback:ro
+    command:
+      - -m
+      - ${LMS_MODEL1_CONTAINER_PATH:-/models_primary/lmstudio-community/Qwen3.6-35B-A3B-GGUF/model.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --parallel
+      - "${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}"
+      - --threads
+      - "${LMS_THREADS:-${THREADS:-16}}"
+      - --ctx-size
+      - "${LMS_CTX_SIZE:-${CTX_SIZE:-4096}}"
+    mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:${LMS_PORT:-1234}/v1/models"]
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
       interval: 30s
       timeout: 10s
       retries: 5
-      start_period: 15s
+      start_period: 30s
 
-  open-webui:
-    image: ghcr.io/open-webui/open-webui:main
-    container_name: open-webui
+  llama-api-qwen34:
+    image: ${LMS_IMAGE:-${LLAMA_IMAGE:-ghcr.io/ggerganov/llama.cpp:server-b4234}}
+    container_name: llama-api-qwen34
     restart: unless-stopped
     ports:
-      - "${WEBUI_PORT:-3000}:8080"
-    environment:
-      - OPENAI_API_BASE_URL=http://lmstudio:${LMS_PORT:-1234}/v1
-      - OPENAI_API_KEY=lmstudio
-      - WEBUI_AUTH=true
-      - ENABLE_LOGIN_FORM=true
-      - ENABLE_SIGNUP=true
-      - ENABLE_API_KEYS=true
-      - ENABLE_EVALUATION_ARENA_MODELS=false
+      - "${LMS_PORT_MODEL2:-${API_PORT_MODEL2:-1235}}:8080"
     volumes:
-      - open-webui-data:/app/backend/data
-    depends_on:
-      lmstudio:
-        condition: service_healthy
-
-volumes:
-  open-webui-data:
-    driver: local
+      - ${LMS_MODELS_ROOT_PRIMARY:-${PRIMARY_MODELS_ROOT:-/expert_scratch/lmstudio-models}}:/models_primary:ro
+      - ${LMS_MODELS_ROOT_FALLBACK:-${FALLBACK_MODELS_ROOT:-/filer/users/rymax1e/lmstudio-models}}:/models_fallback:ro
+    command:
+      - -m
+      - ${LMS_MODEL2_CONTAINER_PATH:-/models_primary/lmstudio-community/Qwen3-4B-Instruct-2507-GGUF/model.gguf}
+      - --host
+      - 0.0.0.0
+      - --port
+      - "8080"
+      - --parallel
+      - "${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}"
+      - --threads
+      - "${LMS_THREADS:-${THREADS:-16}}"
+      - --ctx-size
+      - "${LMS_CTX_SIZE:-${CTX_SIZE:-4096}}"
+    mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 30s
