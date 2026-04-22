@@ -58,6 +58,10 @@ docker compose ps
 
 Подробная инструкция: [DEPLOY.md](DEPLOY.md).
 
+## Очистка диска Docker
+
+Команды и безопасный порядок очистки: [DOCKER_CLEANUP.md](DOCKER_CLEANUP.md).
+
 ## Структура репозитория
 
 ```
