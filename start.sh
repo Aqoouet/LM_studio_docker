@@ -4,11 +4,9 @@ set -e
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cd "$SCRIPT_DIR"
 
-# Ensure .env exists
-if [ ! -f .env ]; then
-    echo "[start] .env not found — copying from .env.example"
-    cp .env.example .env
-fi
+# Recreate .env on every start from .env.example
+echo "[start] Recreating .env from .env.example"
+cp .env.example .env
 
 set -a
 source .env
@@ -58,6 +56,13 @@ resolve_model_path() {
 MODEL1_CONTAINER_PATH="$(resolve_model_path "${MODEL1_SUBDIR}" || true)"
 MODEL2_CONTAINER_PATH="$(resolve_model_path "${MODEL2_SUBDIR}" || true)"
 
+API_PORT_MODEL1_EFFECTIVE="${LMS_PORT_MODEL1:-${API_PORT_MODEL1:-1234}}"
+API_PORT_MODEL2_EFFECTIVE="${LMS_PORT_MODEL2:-${API_PORT_MODEL2:-1235}}"
+MAX_CONCURRENT_EFFECTIVE="${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}"
+THREADS_EFFECTIVE="${LMS_THREADS:-${THREADS:-16}}"
+CTX_SIZE_EFFECTIVE="${LMS_CTX_SIZE:-${CTX_SIZE:-4096}}"
+MEM_LIMIT_EFFECTIVE="${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}"
+
 if [ -z "${MODEL1_CONTAINER_PATH}" ]; then
     echo "[start] ERROR: no GGUF found for model1 in:"
     echo "        ${PRIMARY_MODELS_ROOT}/${MODEL1_SUBDIR}"
@@ -85,6 +90,21 @@ fi
 export LMS_MODEL1_CONTAINER_PATH="${MODEL1_CONTAINER_PATH}"
 export LMS_MODEL2_CONTAINER_PATH="${MODEL2_CONTAINER_PATH}"
 
+echo "[start] Effective configuration:"
+echo "        LMS_IMAGE=${LMS_IMAGE:-ghcr.io/ggml-org/llama.cpp:server}"
+echo "        LMS_MODELS_ROOT_PRIMARY=${PRIMARY_MODELS_ROOT}"
+echo "        LMS_MODELS_ROOT_FALLBACK=${FALLBACK_MODELS_ROOT}"
+echo "        LMS_MODEL1_SUBDIR=${MODEL1_SUBDIR}"
+echo "        LMS_MODEL2_SUBDIR=${MODEL2_SUBDIR}"
+echo "        LMS_MODEL1_CONTAINER_PATH=${MODEL1_CONTAINER_PATH}"
+echo "        LMS_MODEL2_CONTAINER_PATH=${MODEL2_CONTAINER_PATH}"
+echo "        LMS_PORT_MODEL1=${API_PORT_MODEL1_EFFECTIVE}"
+echo "        LMS_PORT_MODEL2=${API_PORT_MODEL2_EFFECTIVE}"
+echo "        LMS_MAX_CONCURRENT=${MAX_CONCURRENT_EFFECTIVE}"
+echo "        LMS_THREADS=${THREADS_EFFECTIVE}"
+echo "        LMS_CTX_SIZE=${CTX_SIZE_EFFECTIVE}"
+echo "        LMS_CONTAINER_MAX_RAM=${MEM_LIMIT_EFFECTIVE}"
+
 echo "[start] Starting llama.cpp API container (CPU-only) ..."
 docker compose up -d --remove-orphans
 
@@ -107,8 +127,6 @@ for i in $(seq 1 30); do
 done
 
 echo "[start] API model endpoints:"
-API_PORT_MODEL1_EFFECTIVE="${LMS_PORT_MODEL1:-${API_PORT_MODEL1:-1234}}"
-API_PORT_MODEL2_EFFECTIVE="${LMS_PORT_MODEL2:-${API_PORT_MODEL2:-1235}}"
 API1="http://127.0.0.1:${API_PORT_MODEL1_EFFECTIVE}"
 API2="http://127.0.0.1:${API_PORT_MODEL2_EFFECTIVE}"
 curl -fsS "${API1}/v1/models" || true
