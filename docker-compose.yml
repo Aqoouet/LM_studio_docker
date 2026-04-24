@@ -16,11 +16,11 @@ services:
       - --port
       - "8080"
       - --parallel
-      - "${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}"
+      - "${LMS_MODEL1_MAX_CONCURRENT:-${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}}"
       - --threads
-      - "${LMS_THREADS:-${THREADS:-16}}"
+      - "${LMS_MODEL1_THREADS:-${LMS_THREADS:-${THREADS:-16}}}"
       - --ctx-size
-      - "${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}"
+      - "${LMS_MODEL1_CTX_SIZE:-${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}}"
     mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     memswap_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     healthcheck:
@@ -47,11 +47,11 @@ services:
       - --port
       - "8080"
       - --parallel
-      - "${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}"
+      - "${LMS_MODEL2_MAX_CONCURRENT:-${LMS_MAX_CONCURRENT:-${MAX_CONCURRENT:-4}}}"
       - --threads
-      - "${LMS_THREADS:-${THREADS:-16}}"
+      - "${LMS_MODEL2_THREADS:-${LMS_THREADS:-${THREADS:-16}}}"
       - --ctx-size
-      - "${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}"
+      - "${LMS_MODEL2_CTX_SIZE:-${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}}"
     mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     memswap_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     healthcheck:

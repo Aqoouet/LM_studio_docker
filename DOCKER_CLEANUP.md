@@ -2,6 +2,27 @@
 
 This guide helps you free Docker disk space safely and understand what each command deletes.
 
+## Container memory usage (quick check)
+
+See live RAM usage for all running containers:
+
+```bash
+docker stats --no-stream
+```
+
+See RAM usage only for this stack's LLM containers:
+
+```bash
+docker stats --no-stream llama-api-qwen36 llama-api-qwen34
+```
+
+Inspect configured memory limits (`mem_limit` / `memswap_limit`):
+
+```bash
+docker inspect llama-api-qwen36 --format 'memory={{.HostConfig.Memory}} swap={{.HostConfig.MemorySwap}}'
+docker inspect llama-api-qwen34 --format 'memory={{.HostConfig.Memory}} swap={{.HostConfig.MemorySwap}}'
+```
+
 ## Quick diagnostics
 
 Check overall Docker usage:
