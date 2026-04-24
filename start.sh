@@ -77,14 +77,14 @@ if [ -z "${MODEL2_CONTAINER_PATH}" ]; then
     exit 1
 fi
 
-# Block startup if swap is currently in use.
+# Warn (do not block) if swap is currently in use.
 SWAP_TOTAL=$(awk '/^SwapTotal:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
 SWAP_FREE=$(awk '/^SwapFree:/ {print $2}' /proc/meminfo 2>/dev/null || echo 0)
 SWAP_USED=$((SWAP_TOTAL - SWAP_FREE))
 if [ "${SWAP_USED}" -gt 0 ]; then
-    echo "[start] ERROR: swap is in use (${SWAP_USED} kB). Disable swap usage before starting."
+    echo "[start] WARNING: swap is in use (${SWAP_USED} kB)."
+    echo "[start] WARNING: continuing startup, but latency may degrade if LLM memory is pressured."
     echo "[start] Hint: sudo swapoff -a"
-    exit 1
 fi
 
 export LMS_MODEL1_CONTAINER_PATH="${MODEL1_CONTAINER_PATH}"
