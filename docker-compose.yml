@@ -22,6 +22,7 @@ services:
       - --ctx-size
       - "${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}"
     mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
+    memswap_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
       interval: 30s
@@ -52,6 +53,7 @@ services:
       - --ctx-size
       - "${LMS_CTX_SIZE:-${CTX_SIZE:-200000}}"
     mem_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
+    memswap_limit: ${LMS_CONTAINER_MAX_RAM:-${CONTAINER_MAX_RAM:-120g}}
     healthcheck:
       test: ["CMD", "curl", "-f", "http://localhost:8080/v1/models"]
       interval: 30s
